@@ -2,11 +2,19 @@
 var raf = require('raf')
   , Boids = require('./')
 
+var attractors = [[
+    0 // x
+  , 0 // y
+  , 50 // dist
+  , -2 // spd
+]]
+
 var canvas = document.createElement('canvas')
   , ctx = canvas.getContext('2d')
   , boids = Boids({
       boids: 200
     , speedLimit: 2
+    , attractors: attractors
   }).on('tick', function(boids) {
     var halfHeight = canvas.height/2
       , halfWidth = canvas.width/2
@@ -22,6 +30,16 @@ var canvas = document.createElement('canvas')
     console.log(boids)
   })
 
+document.body.onmousemove = function(e) {
+  var halfHeight = canvas.height/2
+      , halfWidth = canvas.width/2
+
+  attractors[0][0] = e.x - halfWidth
+  attractors[0][1] = e.y - halfHeight
+  attractors[1][0] = e.x - halfWidth
+  attractors[1][1] = e.y - halfHeight
+}
+
 canvas.width = window.innerWidth
 canvas.height = window.innerHeight
 
@@ -31,7 +49,7 @@ document.body.appendChild(canvas)
 
 raf(window).on('data', boids.tick.bind(boids))
 
-},{"raf":2,"./":3}],2:[function(require,module,exports){
+},{"./":2,"raf":3}],3:[function(require,module,exports){
 (function(){module.exports = raf
 
 var EE = require('events').EventEmitter
@@ -321,7 +339,8 @@ EventEmitter.prototype.listeners = function(type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":5}],3:[function(require,module,exports){
+},{"__browserify_process":5}],2:[function(require,module,exports){
+
 var EventEmitter = require('events').EventEmitter
   , inherits = require('inherits')
 
@@ -341,6 +360,7 @@ function Boids(opts, callback) {
   this.separationForce = opts.separationForce || 0.15
   this.cohesionForce = opts.cohesionForce || 0.15
   this.alignment = opts.alignment || 0.15
+  this.attractors = opts.attractors || []
 
   var boids = this.boids = []
   for (var i = 0, l = opts.boids || 50; i < l; i += 1) {
@@ -372,6 +392,8 @@ Boids.prototype.tick = function() {
     , cforce = [0,0]
     , aforce = [0,0]
     , spare = [0,0]
+    , attractors = this.attractors
+    , attractorCount = attractors.length
     , distSquared
     , currPos
     , targPos
@@ -379,14 +401,29 @@ Boids.prototype.tick = function() {
     , target
 
   while (current--) {
-    target = size
     sforce[0] = 0; sforce[1] = 0
     cforce[0] = 0; cforce[1] = 0
     aforce[0] = 0; aforce[1] = 0
+    currPos = boids[current].pos
 
+    // Attractors
+    target = attractorCount
+    while (target--) {
+      attractor = attractors[target]
+      spare[0] = currPos[0] - attractor[0]
+      spare[1] = currPos[1] - attractor[1]
+      distSquared = spare[0]*spare[0] + spare[1]*spare[1]
+
+      if (distSquared < attractor[2]*attractor[2]) {
+        length = Math.sqrt(spare[0]*spare[0]+spare[1]*spare[1])
+        boids[current].spd[0] -= (attractor[3] * spare[0] / length) || 0
+        boids[current].spd[1] -= (attractor[3] * spare[1] / length) || 0
+      }
+    }
+
+    target = size
     while (target--) {
       if (target === current) continue
-      currPos = boids[current].pos
       targPos = boids[target].pos
 
       spare[0] = currPos[0] - targPos[0]
