@@ -1,5 +1,5 @@
 var raf = require('raf')
-  , Boids = require('boids')
+  , Boids = require('./')
 
 var canvas = document.createElement('canvas')
   , ctx = canvas.getContext('2d')

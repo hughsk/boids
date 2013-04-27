@@ -5,13 +5,16 @@
     "inherits": "~1.0.0"
   },
   "devDependencies": {
-    "raf": "0.0.2"
+    "raf": "0.0.2",
+    "beefy": "~0.1.0",
+    "browserify": "~2.13.2"
   },
   "gitHead": "d450d79f6388cb739e55a84b11c5b38660897ac1",
   "description": "ERROR: No README.md file found!",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prepublish": "node_modules/.bin/browserify demo.js -o bundle.js",
+    "start": "node_modules/.bin/beefy demo.js:bundle.js"
   },
   "repository": {
     "type": "git",

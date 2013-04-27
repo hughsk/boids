@@ -1,6 +1,8 @@
 var EventEmitter = require('events').EventEmitter
   , inherits = require('inherits')
 
+module.exports = Boids
+
 function Boids(opts, callback) {
   if (!(this instanceof Boids)) return new Boids(opts, callback)
   EventEmitter.call(this)
