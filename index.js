@@ -1,3 +1,4 @@
+
 var EventEmitter = require('events').EventEmitter
   , inherits = require('inherits')
 
@@ -17,6 +18,7 @@ function Boids(opts, callback) {
   this.separationForce = opts.separationForce || 0.15
   this.cohesionForce = opts.cohesionForce || 0.15
   this.alignment = opts.alignment || 0.15
+  this.attractors = opts.attractors || []
 
   var boids = this.boids = []
   for (var i = 0, l = opts.boids || 50; i < l; i += 1) {
@@ -48,6 +50,8 @@ Boids.prototype.tick = function() {
     , cforce = [0,0]
     , aforce = [0,0]
     , spare = [0,0]
+    , attractors = this.attractors
+    , attractorCount = attractors.length
     , distSquared
     , currPos
     , targPos
@@ -55,14 +59,29 @@ Boids.prototype.tick = function() {
     , target
 
   while (current--) {
-    target = size
     sforce[0] = 0; sforce[1] = 0
     cforce[0] = 0; cforce[1] = 0
     aforce[0] = 0; aforce[1] = 0
+    currPos = boids[current].pos
 
+    // Attractors
+    target = attractorCount
+    while (target--) {
+      attractor = attractors[target]
+      spare[0] = currPos[0] - attractor[0]
+      spare[1] = currPos[1] - attractor[1]
+      distSquared = spare[0]*spare[0] + spare[1]*spare[1]
+
+      if (distSquared < attractor[2]*attractor[2]) {
+        length = Math.sqrt(spare[0]*spare[0]+spare[1]*spare[1])
+        boids[current].spd[0] -= (attractor[3] * spare[0] / length) || 0
+        boids[current].spd[1] -= (attractor[3] * spare[1] / length) || 0
+      }
+    }
+
+    target = size
     while (target--) {
       if (target === current) continue
-      currPos = boids[current].pos
       targPos = boids[target].pos
 
       spare[0] = currPos[0] - targPos[0]
