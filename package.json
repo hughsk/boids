@@ -1,0 +1,10 @@
+{
+  "name": "boids",
+  "version": "0.0.1",
+  "dependencies": {
+    "inherits": "~1.0.0"
+  },
+  "devDependencies": {
+    "raf": "0.0.2"
+  }
+}
