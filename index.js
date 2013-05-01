@@ -21,7 +21,7 @@ function Boids(opts, callback) {
   this.attractors = opts.attractors || []
 
   var boids = this.boids = []
-  for (var i = 0, l = opts.boids || 50; i < l; i += 1) {
+  for (var i = 0, l = opts.boids === undefined ? 50 : opts.boids; i < l; i += 1) {
     boids[i] = {
         pos: [Math.random()*25,Math.random()*25]
       , spd: [0,0]
