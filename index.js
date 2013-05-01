@@ -46,10 +46,10 @@ Boids.prototype.tick = function() {
     , speedLimitRoot = this.speedLimitRoot
     , size = boids.length
     , current = size
-    , sforce = [0,0]
-    , cforce = [0,0]
-    , aforce = [0,0]
-    , spare = [0,0]
+    , sforceX, sforceY
+    , cforceX, cforceY
+    , aforceX, aforceY
+    , spareX, spareY
     , attractors = this.attractors
     , attractorCount = attractors.length
     , distSquared
@@ -59,23 +59,23 @@ Boids.prototype.tick = function() {
     , target
 
   while (current--) {
-    sforce[0] = 0; sforce[1] = 0
-    cforce[0] = 0; cforce[1] = 0
-    aforce[0] = 0; aforce[1] = 0
+    sforceX = 0; sforceY = 0
+    cforceX = 0; cforceY = 0
+    aforceX = 0; aforceY = 0
     currPos = boids[current].pos
 
     // Attractors
     target = attractorCount
     while (target--) {
       attractor = attractors[target]
-      spare[0] = currPos[0] - attractor[0]
-      spare[1] = currPos[1] - attractor[1]
-      distSquared = spare[0]*spare[0] + spare[1]*spare[1]
+      spareX = currPos[0] - attractor[0]
+      spareY = currPos[1] - attractor[1]
+      distSquared = spareX*spareX + spareY*spareY
 
       if (distSquared < attractor[2]*attractor[2]) {
-        length = Math.sqrt(spare[0]*spare[0]+spare[1]*spare[1])
-        boids[current].spd[0] -= (attractor[3] * spare[0] / length) || 0
-        boids[current].spd[1] -= (attractor[3] * spare[1] / length) || 0
+        length = Math.sqrt(spareX*spareX+spareY*spareY)
+        boids[current].spd[0] -= (attractor[3] * spareX / length) || 0
+        boids[current].spd[1] -= (attractor[3] * spareY / length) || 0
       }
     }
 
@@ -84,34 +84,34 @@ Boids.prototype.tick = function() {
       if (target === current) continue
       targPos = boids[target].pos
 
-      spare[0] = currPos[0] - targPos[0]
-      spare[1] = currPos[1] - targPos[1]
-      distSquared = spare[0]*spare[0] + spare[1]*spare[1]
+      spareX = currPos[0] - targPos[0]
+      spareY = currPos[1] - targPos[1]
+      distSquared = spareX*spareX + spareY*spareY
 
       if (distSquared < sepDist) {
-        sforce[0] += spare[0]
-        sforce[1] += spare[1]
+        sforceX += spareX
+        sforceY += spareY
       } else
       if (distSquared < cohDist) {
-        cforce[0] += spare[0]
-        cforce[1] += spare[1]
-        aforce[0] += boids[target].spd[0]
-        aforce[1] += boids[target].spd[1]
+        cforceX += spareX
+        cforceY += spareY
+        aforceX += boids[target].spd[0]
+        aforceY += boids[target].spd[1]
       }
     }
 
     // Separation
-    length = Math.sqrt(sforce[0]*sforce[0] + sforce[1]*sforce[1])
-    boids[current].spd[0] += (sepForce * sforce[0] / length) || 0
-    boids[current].spd[1] += (sepForce * sforce[1] / length) || 0
+    length = Math.sqrt(sforceX*sforceX + sforceY*sforceY)
+    boids[current].spd[0] += (sepForce * sforceX / length) || 0
+    boids[current].spd[1] += (sepForce * sforceY / length) || 0
     // Cohesion
-    length = Math.sqrt(cforce[0]*cforce[0] + cforce[1]*cforce[1])
-    boids[current].spd[0] -= (cohForce * cforce[0] / length) || 0
-    boids[current].spd[1] -= (cohForce * cforce[1] / length) || 0
+    length = Math.sqrt(cforceX*cforceX + cforceY*cforceY)
+    boids[current].spd[0] -= (cohForce * cforceX / length) || 0
+    boids[current].spd[1] -= (cohForce * cforceY / length) || 0
     // Alignment
-    length = Math.sqrt(aforce[0]*aforce[0] + aforce[1]*aforce[1])
-    boids[current].spd[0] -= (alignment * aforce[0] / length) || 0
-    boids[current].spd[1] -= (alignment * aforce[1] / length) || 0
+    length = Math.sqrt(aforceX*aforceX + aforceY*aforceY)
+    boids[current].spd[0] -= (alignment * aforceX / length) || 0
+    boids[current].spd[1] -= (alignment * aforceY / length) || 0
   }
   current = size
 
