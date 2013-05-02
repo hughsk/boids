@@ -1,6 +1,10 @@
 
 var EventEmitter = require('events').EventEmitter
   , inherits = require('inherits')
+  , POSITIONX = 0
+  , POSITIONY = 1
+  , SPEEDX = 2
+  , SPEEDY = 3
 
 module.exports = Boids
 
@@ -22,11 +26,10 @@ function Boids(opts, callback) {
 
   var boids = this.boids = []
   for (var i = 0, l = opts.boids === undefined ? 50 : opts.boids; i < l; i += 1) {
-    boids[i] = {
-        pos: [Math.random()*25,Math.random()*25]
-      , spd: [0,0]
-      , acc: [0,0]
-    }
+    boids[i] = [
+        Math.random()*25, Math.random()*25 // position
+      , 0, 0                               // speed
+    ]
   }
 
   this.on('tick', function() {
@@ -62,7 +65,7 @@ Boids.prototype.tick = function() {
     sforceX = 0; sforceY = 0
     cforceX = 0; cforceY = 0
     aforceX = 0; aforceY = 0
-    currPos = boids[current].pos
+    currPos = boids[current]
 
     // Attractors
     target = attractorCount
@@ -74,15 +77,15 @@ Boids.prototype.tick = function() {
 
       if (distSquared < attractor[2]*attractor[2]) {
         length = Math.sqrt(spareX*spareX+spareY*spareY)
-        boids[current].spd[0] -= (attractor[3] * spareX / length) || 0
-        boids[current].spd[1] -= (attractor[3] * spareY / length) || 0
+        boids[current][SPEEDX] -= (attractor[3] * spareX / length) || 0
+        boids[current][SPEEDY] -= (attractor[3] * spareY / length) || 0
       }
     }
 
     target = size
     while (target--) {
       if (target === current) continue
-      targPos = boids[target].pos
+      targPos = boids[target]
 
       spareX = currPos[0] - targPos[0]
       spareY = currPos[1] - targPos[1]
@@ -95,23 +98,23 @@ Boids.prototype.tick = function() {
       if (distSquared < cohDist) {
         cforceX += spareX
         cforceY += spareY
-        aforceX += boids[target].spd[0]
-        aforceY += boids[target].spd[1]
+        aforceX += boids[target][SPEEDX]
+        aforceY += boids[target][SPEEDY]
       }
     }
 
     // Separation
     length = Math.sqrt(sforceX*sforceX + sforceY*sforceY)
-    boids[current].spd[0] += (sepForce * sforceX / length) || 0
-    boids[current].spd[1] += (sepForce * sforceY / length) || 0
+    boids[current][SPEEDX] += (sepForce * sforceX / length) || 0
+    boids[current][SPEEDY] += (sepForce * sforceY / length) || 0
     // Cohesion
     length = Math.sqrt(cforceX*cforceX + cforceY*cforceY)
-    boids[current].spd[0] -= (cohForce * cforceX / length) || 0
-    boids[current].spd[1] -= (cohForce * cforceY / length) || 0
+    boids[current][SPEEDX] -= (cohForce * cforceX / length) || 0
+    boids[current][SPEEDY] -= (cohForce * cforceY / length) || 0
     // Alignment
     length = Math.sqrt(aforceX*aforceX + aforceY*aforceY)
-    boids[current].spd[0] -= (alignment * aforceX / length) || 0
-    boids[current].spd[1] -= (alignment * aforceY / length) || 0
+    boids[current][SPEEDX] -= (alignment * aforceX / length) || 0
+    boids[current][SPEEDY] -= (alignment * aforceY / length) || 0
   }
   current = size
 
@@ -119,18 +122,16 @@ Boids.prototype.tick = function() {
   // this tick
   while (current--) {
     if (speedLimit) {
-      distSquared = boids[current].spd[0]*boids[current].spd[0] + boids[current].spd[1]*boids[current].spd[1]
+      distSquared = boids[current][SPEEDX]*boids[current][SPEEDX] + boids[current][SPEEDY]*boids[current][SPEEDY]
       if (distSquared > speedLimit) {
         ratio = speedLimitRoot / Math.sqrt(distSquared)
-        boids[current].spd[0] *= ratio
-        boids[current].spd[1] *= ratio
+        boids[current][SPEEDX] *= ratio
+        boids[current][SPEEDY] *= ratio
       }
     }
-    boids[current].spd[0] += boids[current].acc[0]
-    boids[current].spd[1] += boids[current].acc[1]
 
-    boids[current].pos[0] += boids[current].spd[0]
-    boids[current].pos[1] += boids[current].spd[1]
+    boids[current][POSITIONX] += boids[current][SPEEDX]
+    boids[current][POSITIONY] += boids[current][SPEEDY]
   }
 
   this.emit('tick', boids)
