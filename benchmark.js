@@ -10,7 +10,7 @@ function benchmark(boids) {
   }
 
   for (var i = 50; i <= 1000; i += 50) {
-    console.log(i + ': ' + ~~test(i, 1000) + ' ticks/sec')
+    console.log(i + ' boids: ' + ~~test(i, 5000) + ' ticks/sec')
   }
 }
 

@@ -7,7 +7,10 @@
   "devDependencies": {
     "raf": "0.0.2",
     "beefy": "~0.1.0",
-    "browserify": "~2.13.2"
+    "browserify": "~2.13.2",
+    "ticker": "0.0.1",
+    "fps": "0.0.3",
+    "debounce": "0.0.2"
   },
   "gitHead": "d450d79f6388cb739e55a84b11c5b38660897ac1",
   "description": "ERROR: No README.md file found!",
