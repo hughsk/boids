@@ -1,6 +1,6 @@
 var fps = require('fps')
   , ticker = require('ticker')
-  , debouce = require('debounce')
+  , debounce = require('debounce')
   , Boids = require('./')
 
 var attractors = [[
