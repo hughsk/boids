@@ -1,105 +1,112 @@
 ;(function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require=="function"&&require;if(!s&&o)return o(n,!0);if(r)return r(n,!0);throw new Error("Cannot find module '"+n+"'")}var u=t[n]={exports:{}};e[n][0].call(u.exports,function(t){var r=e[n][1][t];return i(r?r:t)},u,u.exports)}return t[n].exports}var r=typeof require=="function"&&require;for(var s=0;s<n.length;s++)i(n[s]);return i})({1:[function(require,module,exports){
-var raf = require('raf')
+var fps = require('fps')
+  , ticker = require('ticker')
+  , debouce = require('debounce')
   , Boids = require('./')
 
 var attractors = [[
-    0 // x
-  , 0 // y
-  , 50 // dist
-  , -2 // spd
+    Infinity // x
+  , Infinity // y
+  , 150 // dist
+  , 0.25 // spd
 ]]
 
 var canvas = document.createElement('canvas')
   , ctx = canvas.getContext('2d')
   , boids = Boids({
-      boids: 200
+      boids: 150
     , speedLimit: 2
+    , accelerationLimit: 0.5
     , attractors: attractors
-  }).on('tick', function(boids) {
-    var halfHeight = canvas.height/2
-      , halfWidth = canvas.width/2
-
-    ctx.fillStyle = '#000'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-    ctx.fillStyle = '#fff'
-    for (var i = 0, l = boids.length; i < l; i += 1) {
-      ctx.fillRect(boids[i].pos[0] + halfWidth, boids[i].pos[1] + halfHeight, 5, 5)
-    }
-  }).once('tick', function(boids) {
-    console.log(boids)
   })
 
 document.body.onmousemove = function(e) {
   var halfHeight = canvas.height/2
-      , halfWidth = canvas.width/2
+    , halfWidth = canvas.width/2
 
   attractors[0][0] = e.x - halfWidth
   attractors[0][1] = e.y - halfHeight
-  attractors[1][0] = e.x - halfWidth
-  attractors[1][1] = e.y - halfHeight
 }
 
-canvas.width = window.innerWidth
-canvas.height = window.innerHeight
+window.onresize = debounce(function() {
+  canvas.width = window.innerWidth
+  canvas.height = window.innerHeight
+}, 100)
+window.onresize()
 
 document.body.style.margin = '0'
 document.body.style.padding = '0'
 document.body.appendChild(canvas)
 
-raf(window).on('data', boids.tick.bind(boids))
+ticker(window, 60).on('tick', function() {
+  frames.tick()
+  boids.tick()
+}).on('draw', function() {
+  var boidData = boids.boids
+    , halfHeight = canvas.height/2
+    , halfWidth = canvas.width/2
 
-},{"./":2,"raf":3}],3:[function(require,module,exports){
-(function(){module.exports = raf
+  ctx.fillStyle = 'rgba(255,241,235,0.25)' // '#FFF1EB'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-var EE = require('events').EventEmitter
-  , global = typeof window === 'undefined' ? this : window
-  , now = Date.now || function () { return +new Date() }
-
-var _raf =
-  global.requestAnimationFrame ||
-  global.webkitRequestAnimationFrame ||
-  global.mozRequestAnimationFrame ||
-  global.msRequestAnimationFrame ||
-  global.oRequestAnimationFrame ||
-  (global.setImmediate ? function(fn, el) {
-    setImmediate(fn)
-  } :
-  function(fn, el) {
-    setTimeout(fn, 0)
-  })
-
-function raf(el) {
-  var now = raf.now()
-    , ee = new EE
-
-  ee.pause = function() { ee.paused = true }
-  ee.resume = function() { ee.paused = false }
-
-  _raf(iter, el)
-
-  return ee
-
-  function iter(timestamp) {
-    var _now = raf.now()
-      , dt = _now - now
-    
-    now = _now
-
-    ee.emit('data', dt)
-
-    if(!ee.paused) {
-      _raf(iter, el)
-    }
+  ctx.fillStyle = '#543D5E'
+  for (var i = 0, l = boidData.length, x, y; i < l; i += 1) {
+    x = boidData[i][0]; y = boidData[i][1]
+    // wrap around the screen
+    boidData[i][0] = x > halfWidth ? -halfWidth : -x > halfWidth ? halfWidth : x
+    boidData[i][1] = y > halfHeight ? -halfHeight : -y > halfHeight ? halfHeight : y
+    ctx.fillRect(x + halfWidth, y + halfHeight, 2, 2)
   }
-}
+})
 
-raf.polyfill = _raf
-raf.now = now
+var frameText = document.querySelector('[data-fps]')
+var countText = document.querySelector('[data-count]')
+var frames = fps({ every: 10, decay: 0.04 }).on('data', function(rate) {
+  for (var i = 0; i < 3; i += 1) {
+    if (rate <= 56 && boids.boids.length > 10) boids.boids.pop()
+    if (rate >= 60 && boids.boids.length < 500) boids.boids.push([0,0,Math.random()*6-3,Math.random()*6-3,0,0])
+  }
+  frameText.innerHTML = String(Math.round(rate))
+  countText.innerHTML = String(boids.boids.length)
+})
 
+},{"fps":2,"ticker":3,"./":4,"debounce":5}],5:[function(require,module,exports){
 
-})()
-},{"events":4}],5:[function(require,module,exports){
+/**
+ * Debounces a function by the given threshold.
+ *
+ * @see http://unscriptable.com/2009/03/20/debouncing-javascript-methods/
+ * @param {Function} function to wrap
+ * @param {Number} timeout in ms (`100`)
+ * @param {Boolean} whether to execute at the beginning (`true`)
+ * @api public
+ */
+
+module.exports = function debounce(func, threshold, execAsap){
+  var timeout;
+  if (false !== execAsap) execAsap = true;
+
+  return function debounced(){
+    var obj = this, args = arguments;
+
+    function delayed () {
+      if (!execAsap) {
+        func.apply(obj, args);
+      }
+      timeout = null;
+    };
+
+    if (timeout) {
+      clearTimeout(timeout);
+    } else if (execAsap) {
+      func.apply(obj, args);
+    }
+
+    timeout = setTimeout(delayed, threshold || 100);
+  };
+};
+
+},{}],6:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -153,7 +160,7 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-},{}],4:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 (function(process){if (!process.EventEmitter) process.EventEmitter = function () {};
 
 var EventEmitter = exports.EventEmitter = process.EventEmitter;
@@ -339,10 +346,16 @@ EventEmitter.prototype.listeners = function(type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":5}],2:[function(require,module,exports){
-
+},{"__browserify_process":6}],4:[function(require,module,exports){
 var EventEmitter = require('events').EventEmitter
   , inherits = require('inherits')
+  , sqrt = Math.sqrt
+  , POSITIONX = 0
+  , POSITIONY = 1
+  , SPEEDX = 2
+  , SPEEDY = 3
+  , ACCELERATIONX = 4
+  , ACCELERATIONY = 5
 
 module.exports = Boids
 
@@ -354,21 +367,24 @@ function Boids(opts, callback) {
   callback = callback || function(){}
 
   this.speedLimitRoot = opts.speedLimit || 0
+  this.accelerationLimitRoot = opts.accelerationLimit || 1
   this.speedLimit = Math.pow(this.speedLimitRoot, 2)
+  this.accelerationLimit = Math.pow(this.accelerationLimitRoot, 2)
   this.separationDistance = Math.pow(opts.separationDistance || 60, 2)
-  this.cohesionDistance = Math.pow(opts.cohesionDistance || 100, 2)
+  this.alignmentDistance = Math.pow(opts.alignmentDistance || 180, 2)
+  this.cohesionDistance = Math.pow(opts.cohesionDistance || 180, 2)
   this.separationForce = opts.separationForce || 0.15
-  this.cohesionForce = opts.cohesionForce || 0.15
-  this.alignment = opts.alignment || 0.15
+  this.cohesionForce = opts.cohesionForce || 0.1
+  this.alignmentForce = opts.alignmentForce || opts.alignment || 0.25
   this.attractors = opts.attractors || []
 
   var boids = this.boids = []
-  for (var i = 0, l = opts.boids || 50; i < l; i += 1) {
-    boids[i] = {
-        pos: [Math.random()*25,Math.random()*25]
-      , spd: [0,0]
-      , acc: [0,0]
-    }
+  for (var i = 0, l = opts.boids === undefined ? 50 : opts.boids; i < l; i += 1) {
+    boids[i] = [
+        Math.random()*25, Math.random()*25 // position
+      , 0, 0                               // speed
+      , 0, 0                               // acceleration
+    ]
   }
 
   this.on('tick', function() {
@@ -383,15 +399,18 @@ Boids.prototype.tick = function() {
     , sepForce = this.separationForce
     , cohDist = this.cohesionDistance
     , cohForce = this.cohesionForce
-    , alignment = this.alignment
+    , aliDist = this.alignmentDistance
+    , aliForce = this.alignmentForce
     , speedLimit = this.speedLimit
+    , accelerationLimit = this.accelerationLimit
+    , accelerationLimitRoot = this.accelerationLimitRoot
     , speedLimitRoot = this.speedLimitRoot
     , size = boids.length
     , current = size
-    , sforce = [0,0]
-    , cforce = [0,0]
-    , aforce = [0,0]
-    , spare = [0,0]
+    , sforceX, sforceY
+    , cforceX, cforceY
+    , aforceX, aforceY
+    , spareX, spareY
     , attractors = this.attractors
     , attractorCount = attractors.length
     , distSquared
@@ -401,84 +420,95 @@ Boids.prototype.tick = function() {
     , target
 
   while (current--) {
-    sforce[0] = 0; sforce[1] = 0
-    cforce[0] = 0; cforce[1] = 0
-    aforce[0] = 0; aforce[1] = 0
-    currPos = boids[current].pos
+    sforceX = 0; sforceY = 0
+    cforceX = 0; cforceY = 0
+    aforceX = 0; aforceY = 0
+    currPos = boids[current]
 
     // Attractors
     target = attractorCount
     while (target--) {
       attractor = attractors[target]
-      spare[0] = currPos[0] - attractor[0]
-      spare[1] = currPos[1] - attractor[1]
-      distSquared = spare[0]*spare[0] + spare[1]*spare[1]
+      spareX = currPos[0] - attractor[0]
+      spareY = currPos[1] - attractor[1]
+      distSquared = spareX*spareX + spareY*spareY
 
       if (distSquared < attractor[2]*attractor[2]) {
-        length = Math.sqrt(spare[0]*spare[0]+spare[1]*spare[1])
-        boids[current].spd[0] -= (attractor[3] * spare[0] / length) || 0
-        boids[current].spd[1] -= (attractor[3] * spare[1] / length) || 0
+        length = sqrt(spareX*spareX+spareY*spareY)
+        boids[current][SPEEDX] -= (attractor[3] * spareX / length) || 0
+        boids[current][SPEEDY] -= (attractor[3] * spareY / length) || 0
       }
     }
 
     target = size
     while (target--) {
       if (target === current) continue
-      targPos = boids[target].pos
-
-      spare[0] = currPos[0] - targPos[0]
-      spare[1] = currPos[1] - targPos[1]
-      distSquared = spare[0]*spare[0] + spare[1]*spare[1]
+      spareX = currPos[0] - boids[target][0]
+      spareY = currPos[1] - boids[target][1]
+      distSquared = spareX*spareX + spareY*spareY
 
       if (distSquared < sepDist) {
-        sforce[0] += spare[0]
-        sforce[1] += spare[1]
-      } else
-      if (distSquared < cohDist) {
-        cforce[0] += spare[0]
-        cforce[1] += spare[1]
-        aforce[0] += boids[target].spd[0]
-        aforce[1] += boids[target].spd[1]
+        sforceX += spareX
+        sforceY += spareY
+      } else {
+        if (distSquared < cohDist) {
+          cforceX += spareX
+          cforceY += spareY
+        }
+        if (distSquared < aliDist) {
+          aforceX += boids[target][SPEEDX]
+          aforceY += boids[target][SPEEDY]
+        }
       }
     }
 
     // Separation
-    length = Math.sqrt(sforce[0]*sforce[0] + sforce[1]*sforce[1])
-    boids[current].spd[0] += (sepForce * sforce[0] / length) || 0
-    boids[current].spd[1] += (sepForce * sforce[1] / length) || 0
+    length = sqrt(sforceX*sforceX + sforceY*sforceY)
+    boids[current][ACCELERATIONX] += (sepForce * sforceX / length) || 0
+    boids[current][ACCELERATIONY] += (sepForce * sforceY / length) || 0
     // Cohesion
-    length = Math.sqrt(cforce[0]*cforce[0] + cforce[1]*cforce[1])
-    boids[current].spd[0] -= (cohForce * cforce[0] / length) || 0
-    boids[current].spd[1] -= (cohForce * cforce[1] / length) || 0
+    length = sqrt(cforceX*cforceX + cforceY*cforceY)
+    boids[current][ACCELERATIONX] -= (cohForce * cforceX / length) || 0
+    boids[current][ACCELERATIONY] -= (cohForce * cforceY / length) || 0
     // Alignment
-    length = Math.sqrt(aforce[0]*aforce[0] + aforce[1]*aforce[1])
-    boids[current].spd[0] -= (alignment * aforce[0] / length) || 0
-    boids[current].spd[1] -= (alignment * aforce[1] / length) || 0
+    length = sqrt(aforceX*aforceX + aforceY*aforceY)
+    boids[current][ACCELERATIONX] -= (aliForce * aforceX / length) || 0
+    boids[current][ACCELERATIONY] -= (aliForce * aforceY / length) || 0
   }
   current = size
 
   // Apply speed/acceleration for
   // this tick
   while (current--) {
-    if (speedLimit) {
-      distSquared = boids[current].spd[0]*boids[current].spd[0] + boids[current].spd[1]*boids[current].spd[1]
-      if (distSquared > speedLimit) {
-        ratio = speedLimitRoot / Math.sqrt(distSquared)
-        boids[current].spd[0] *= ratio
-        boids[current].spd[1] *= ratio
+    if (accelerationLimit) {
+      distSquared = boids[current][ACCELERATIONX]*boids[current][ACCELERATIONX] + boids[current][ACCELERATIONY]*boids[current][ACCELERATIONY]
+      if (distSquared > accelerationLimit) {
+        ratio = accelerationLimitRoot / sqrt(distSquared)
+        boids[current][ACCELERATIONX] *= ratio
+        boids[current][ACCELERATIONY] *= ratio
       }
     }
-    boids[current].spd[0] += boids[current].acc[0]
-    boids[current].spd[1] += boids[current].acc[1]
 
-    boids[current].pos[0] += boids[current].spd[0]
-    boids[current].pos[1] += boids[current].spd[1]
+    boids[current][SPEEDX] += boids[current][ACCELERATIONX]
+    boids[current][SPEEDY] += boids[current][ACCELERATIONY]
+
+    if (speedLimit) {
+      distSquared = boids[current][SPEEDX]*boids[current][SPEEDX] + boids[current][SPEEDY]*boids[current][SPEEDY]
+      if (distSquared > speedLimit) {
+        ratio = speedLimitRoot / sqrt(distSquared)
+        boids[current][SPEEDX] *= ratio
+        boids[current][SPEEDY] *= ratio
+      }
+    }
+
+    boids[current][POSITIONX] += boids[current][SPEEDX]
+    boids[current][POSITIONY] += boids[current][SPEEDY]
   }
 
   this.emit('tick', boids)
 }
 
-},{"events":4,"inherits":6}],6:[function(require,module,exports){
+},{"events":7,"inherits":8}],8:[function(require,module,exports){
 module.exports = inherits
 
 function inherits (c, p, proto) {
@@ -509,5 +539,125 @@ function inherits (c, p, proto) {
 //inherits(Child, Parent)
 //new Child
 
-},{}]},{},[1])
+},{}],2:[function(require,module,exports){
+var EventEmitter = require('events').EventEmitter
+  , inherits = require('inherits')
+
+module.exports = fps
+
+// Try use performance.now(), otherwise try
+// +new Date.
+var now = (
+  (function(){ return this }()).performance &&
+  'function' === typeof performance.now
+) ? function() { return performance.now() }
+  : Date.now || function() { return +new Date }
+
+function fps(opts) {
+  if (!(this instanceof fps)) return new fps(opts)
+  EventEmitter.call(this)
+
+  opts = opts || {}
+  this.last = now()
+  this.rate = 0
+  this.time = 0
+  this.decay = opts.decay || 1
+  this.every = opts.every || 1
+  this.ticks = 0
+}
+inherits(fps, EventEmitter)
+
+fps.prototype.tick = function() {
+  var time = now()
+    , diff = time - this.last
+    , fps = diff
+
+  this.ticks += 1
+  this.last = time
+  this.time += (fps - this.time) * this.decay
+  this.rate = 1000 / this.time
+  if (!(this.ticks % this.every)) this.emit('data', this.rate)
+}
+
+
+},{"events":7,"inherits":8}],3:[function(require,module,exports){
+var raf = require('raf')
+  , EventEmitter = require('events').EventEmitter
+
+module.exports = ticker
+
+function ticker(element, rate, limit) {
+  var millisecondsPerFrame = 1000 / (rate || 60)
+    , time = 0
+    , emitter
+
+  limit = arguments.length > 2 ? +limit + 1 : 2
+  emitter = raf(element || window).on('data', function(dt) {
+    var n = limit
+
+    time += dt
+    while (time > millisecondsPerFrame && n) {
+      time -= millisecondsPerFrame
+      n -= 1
+      emitter.emit('tick')
+    }
+    time = (time + millisecondsPerFrame * 1000) % millisecondsPerFrame
+
+    if (n !== limit) emitter.emit('draw')
+  })
+
+  return emitter
+}
+
+},{"events":7,"raf":9}],9:[function(require,module,exports){
+(function(){module.exports = raf
+
+var EE = require('events').EventEmitter
+  , global = typeof window === 'undefined' ? this : window
+  , now = Date.now || function () { return +new Date() }
+
+var _raf =
+  global.requestAnimationFrame ||
+  global.webkitRequestAnimationFrame ||
+  global.mozRequestAnimationFrame ||
+  global.msRequestAnimationFrame ||
+  global.oRequestAnimationFrame ||
+  (global.setImmediate ? function(fn, el) {
+    setImmediate(fn)
+  } :
+  function(fn, el) {
+    setTimeout(fn, 0)
+  })
+
+function raf(el) {
+  var now = raf.now()
+    , ee = new EE
+
+  ee.pause = function() { ee.paused = true }
+  ee.resume = function() { ee.paused = false }
+
+  _raf(iter, el)
+
+  return ee
+
+  function iter(timestamp) {
+    var _now = raf.now()
+      , dt = _now - now
+    
+    now = _now
+
+    ee.emit('data', dt)
+
+    if(!ee.paused) {
+      _raf(iter, el)
+    }
+  }
+}
+
+raf.polyfill = _raf
+raf.now = now
+
+
+})()
+},{"events":7}]},{},[1])
 ;
