@@ -69,6 +69,7 @@ Boids.prototype.tick = function() {
     , targPos
     , length
     , target
+    , ratio
 
   while (current--) {
     sforceX = 0; sforceY = 0
