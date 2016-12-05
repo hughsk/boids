@@ -1,6 +1,5 @@
 var EventEmitter = require('events').EventEmitter
   , inherits = require('inherits')
-  , sqrt = Math.sqrt
   , POSITIONX = 0
   , POSITIONY = 1
   , SPEEDX = 2
@@ -64,11 +63,12 @@ Boids.prototype.tick = function() {
     , spareX, spareY
     , attractors = this.attractors
     , attractorCount = attractors.length
+    , attractor
     , distSquared
     , currPos
-    , targPos
     , length
     , target
+    , ratio
 
   while (current--) {
     sforceX = 0; sforceY = 0
@@ -85,7 +85,7 @@ Boids.prototype.tick = function() {
       distSquared = spareX*spareX + spareY*spareY
 
       if (distSquared < attractor[2]*attractor[2]) {
-        length = sqrt(spareX*spareX+spareY*spareY)
+        length = hypot(spareX, spareY)
         boids[current][SPEEDX] -= (attractor[3] * spareX / length) || 0
         boids[current][SPEEDY] -= (attractor[3] * spareY / length) || 0
       }
@@ -114,15 +114,15 @@ Boids.prototype.tick = function() {
     }
 
     // Separation
-    length = sqrt(sforceX*sforceX + sforceY*sforceY)
+    length = hypot(sforceX, sforceY)
     boids[current][ACCELERATIONX] += (sepForce * sforceX / length) || 0
     boids[current][ACCELERATIONY] += (sepForce * sforceY / length) || 0
     // Cohesion
-    length = sqrt(cforceX*cforceX + cforceY*cforceY)
+    length = hypot(cforceX, cforceY)
     boids[current][ACCELERATIONX] -= (cohForce * cforceX / length) || 0
     boids[current][ACCELERATIONY] -= (cohForce * cforceY / length) || 0
     // Alignment
-    length = sqrt(aforceX*aforceX + aforceY*aforceY)
+    length = hypot(aforceX, aforceY)
     boids[current][ACCELERATIONX] -= (aliForce * aforceX / length) || 0
     boids[current][ACCELERATIONY] -= (aliForce * aforceY / length) || 0
   }
@@ -134,7 +134,7 @@ Boids.prototype.tick = function() {
     if (accelerationLimit) {
       distSquared = boids[current][ACCELERATIONX]*boids[current][ACCELERATIONX] + boids[current][ACCELERATIONY]*boids[current][ACCELERATIONY]
       if (distSquared > accelerationLimit) {
-        ratio = accelerationLimitRoot / sqrt(distSquared)
+        ratio = accelerationLimitRoot / hypot(boids[current][ACCELERATIONX], boids[current][ACCELERATIONY])
         boids[current][ACCELERATIONX] *= ratio
         boids[current][ACCELERATIONY] *= ratio
       }
@@ -146,7 +146,7 @@ Boids.prototype.tick = function() {
     if (speedLimit) {
       distSquared = boids[current][SPEEDX]*boids[current][SPEEDX] + boids[current][SPEEDY]*boids[current][SPEEDY]
       if (distSquared > speedLimit) {
-        ratio = speedLimitRoot / sqrt(distSquared)
+        ratio = speedLimitRoot / hypot(boids[current][SPEEDX], boids[current][SPEEDY])
         boids[current][SPEEDX] *= ratio
         boids[current][SPEEDY] *= ratio
       }
@@ -157,4 +157,14 @@ Boids.prototype.tick = function() {
   }
 
   this.emit('tick', boids)
+}
+
+// double-dog-leg hypothenuse approximation
+// http://forums.parallax.com/discussion/147522/dog-leg-hypotenuse-approximation
+function hypot(a, b) {
+  a = Math.abs(a)
+  b = Math.abs(b)
+  var lo = Math.min(a, b)
+  var hi = Math.max(a, b)
+  return hi + 3 * lo / 32 + Math.max(0, 2 * lo - hi) / 8 + Math.max(0, 4 * lo - hi) / 16
 }
