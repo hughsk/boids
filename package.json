@@ -13,7 +13,7 @@
     "debounce": "0.0.2"
   },
   "gitHead": "d450d79f6388cb739e55a84b11c5b38660897ac1",
-  "description": "ERROR: No README.md file found!",
+  "description": "A fast JavaScript implementation of the boids algorithm",
   "main": "index.js",
   "scripts": {
     "prepublish": "node_modules/.bin/browserify demo.js -o bundle.js",
