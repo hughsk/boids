@@ -1,34 +1,27 @@
 {
   "name": "boids",
-  "version": "2.0.0",
+  "version": "1.0.0",
+  "description": "A lightweight JavaScript implementation of [boids](http://en.wikipedia.org/wiki/Boids). Its \"API\" is a little limited, but it's reasonably performant - my MacBook ran the demo with 1,000 boids at 60 frames per second.",
+  "main": "main.js",
   "dependencies": {
-    "inherits": "~1.0.0"
+    "electron": "^5.0.1",
+    "raf": "^0.0.2",
+    "raw-socket": "^1.6.4"
   },
   "devDependencies": {
-    "raf": "0.0.2",
-    "beefy": "~0.1.0",
-    "browserify": "~2.13.2",
-    "ticker": "0.0.1",
-    "fps": "0.0.3",
-    "debounce": "0.0.2"
+    "electron-builder": "^20.40.2"
   },
-  "gitHead": "d450d79f6388cb739e55a84b11c5b38660897ac1",
-  "description": "ERROR: No README.md file found!",
-  "main": "index.js",
   "scripts": {
-    "prepublish": "node_modules/.bin/browserify demo.js -o bundle.js",
-    "start": "node_modules/.bin/beefy demo.js:bundle.js"
+    "start": "electron ."
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/hughsk/boids.git"
+    "url": "git+https://github.com/hughsk/boids.git"
   },
-  "keywords": [
-    "boids",
-    "flocking",
-    "algorithm",
-    "emergence"
-  ],
-  "author": "Hugh Kennedy <hughskennedy@gmail.com> (http://hughskennedy.com/)",
-  "license": "MIT"
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hughsk/boids/issues"
+  },
+  "homepage": "https://github.com/hughsk/boids#readme"
 }
