@@ -1,0 +1,35 @@
+{
+  "name": "boids",
+  "version": "2.0.0",
+  "dependencies": {
+    "inherits": "~1.0.0",
+    "raw-socket": "^1.6.4"
+  },
+  "devDependencies": {
+    "beefy": "~0.1.0",
+    "browserify": "~2.13.2",
+    "debounce": "0.0.2",
+    "fps": "0.0.3",
+    "raf": "0.0.2",
+    "ticker": "0.0.1"
+  },
+  "gitHead": "d450d79f6388cb739e55a84b11c5b38660897ac1",
+  "description": "ERROR: No README.md file found!",
+  "main": "index.js",
+  "scripts": {
+    "prepublish": "node_modules/.bin/browserify demo.js -o bundle.js",
+    "start": "node_modules/.bin/beefy demo.js:bundle.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/hughsk/boids.git"
+  },
+  "keywords": [
+    "boids",
+    "flocking",
+    "algorithm",
+    "emergence"
+  ],
+  "author": "Hugh Kennedy <hughskennedy@gmail.com> (http://hughskennedy.com/)",
+  "license": "MIT"
+}
